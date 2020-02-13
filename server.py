@@ -64,23 +64,22 @@ def recommend():
         data = request.json
         user_id, user_frame = parse_data(data)
         products = user_frame["product_id"].to_list()
-        if not user_id:
+        if not products:
             return jsonify(baseline)
-        return jsonify(
-            {
-                "recommended_products": [
-                    pred[1]
-                    for pred in predict_user(
-                        model,
-                        user_id,
-                        products,
-                        product_dict,
-                        reverse_product_dict,
-                        matrix_shape,
-                    )
-                ]
-            }
-        )
+        else:
+            # второй хак - добавим товаров из топа, если мало порекомендовали
+            predictions = [
+                pred
+                for pred in predict_user(
+                    model, products, product_dict, reverse_product_dict, matrix_shape,
+                )
+            ]
+            predictions = predictions + [
+                base_task
+                for base_task in baseline["recommended_products"]
+                if base_task not in predictions
+            ]
+            return jsonify({"recommended_products": predictions[:30]})
     except Exception as e:
         return jsonify(baseline)
 

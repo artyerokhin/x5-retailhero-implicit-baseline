@@ -31,15 +31,21 @@ def sort_by_dict(lst, dct):
     return [count[0] for count in sorted(counts, key=lambda x: x[1], reverse=True)]
 
 
-def predict_user(model, user_id, products, product_dict, reverse_product_dict, matrix_shape):
-    enum_clients = np.zeros(len(products))
-    enum_products = np.array([product_dict[product] for product in products])
+def predict_user(model, products, product_dict, reverse_product_dict, matrix_shape):
+    enum_clients = np.zeros(
+        len([product for product in products if product in product_dict])
+    )
+    enum_products = np.array(
+        [product_dict[product] for product in products if product in product_dict]
+    )
 
-    sparse_matrix = scipy.sparse.csr_matrix((np.ones(shape=(len(enum_clients))),
-                                             (enum_clients, enum_products)),
-                                            shape=matrix_shape)
+    sparse_matrix = scipy.sparse.csr_matrix(
+        (np.ones(shape=(len(enum_clients))), (enum_clients, enum_products)),
+        shape=matrix_shape,
+    )
 
-    rec = model.recommend(0, sparse_matrix, N=30, recalculate_user=True,
-                          filter_already_liked_items=False)
+    rec = model.recommend(
+        0, sparse_matrix, N=30, recalculate_user=True, filter_already_liked_items=False
+    )
 
-    return [[user_id, reverse_product_dict[r[0]]] for r in rec]
+    return [reverse_product_dict[r[0]] for r in rec]
